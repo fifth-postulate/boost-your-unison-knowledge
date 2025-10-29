@@ -11,4 +11,5 @@
 * [First Glance](./topic/glance.md)
 
 # Appendices
+* [Installation](./appendix/installation.md)
 * [Sources](./appendix/sources.md)
