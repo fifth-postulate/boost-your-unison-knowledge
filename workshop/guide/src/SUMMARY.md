@@ -5,9 +5,10 @@
 
 # Introduction
 * [Origin](./introduction/origin.md)
+* [Community](./introduction/community.md)
 
 # Topics
-* [First glance](./topic/glance.md)
+* [First Glance](./topic/glance.md)
 
 # Appendices
 * [Sources](./appendix/sources.md)
