@@ -6,5 +6,8 @@
 # Introduction
 * [Origin](./introduction/origin.md)
 
+# Topics
+* [First glance](./topic/glance.md)
+
 # Appendices
 * [Sources](./appendix/sources.md)
