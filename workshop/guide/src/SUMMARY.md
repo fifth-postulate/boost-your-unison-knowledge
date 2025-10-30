@@ -12,4 +12,5 @@
 
 # Appendices
 * [Installation](./appendix/installation.md)
+* [Authenticate](./appendix/authenticate.md)
 * [Sources](./appendix/sources.md)
