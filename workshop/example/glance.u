@@ -1,0 +1,95 @@
+-- Single-line comments are denoted with double dashes `--`
+
+{-
+    Multi-line comments are possible as well. They can:
+
+    {-
+        even be properly nested!
+    -}
+-}
+
+{-
+    When you have installed Unison create a directory, enter it and run the
+    `ucm` command.
+
+    At the prompt enter
+
+    ```
+        > project.create booster-glance
+    ```
+
+    It will create a project and download the Unison base library.
+-}
+
+{-
+    We will define a term. Once ready safe the file.
+-}
+
+-- helloWorld : '{IO, Exception} ()
+-- helloWorld = do
+--     printLine "Hello, World!"
+
+{-
+    The Unison Codebase Manager (ucm) picked up the file change and suggest to
+    update the codebase.
+
+    Before you do you can also run the term.
+
+    ```
+        > run helloWorld
+    ```
+-}
+
+{-
+    We will install the cloud library via the command
+
+    ```
+        > lib.install @unison/cloud
+    ```
+-}
+
+{-
+    Next we will define a service
+-}
+
+-- helloWorld.service : HttpRequest -> HttpResponse
+-- helloWorld.service _ =
+--     HttpResponse.ok (Body (Text.toUtf8 "Hello, World!"))
+
+{-
+    And define a deployment.
+-}
+
+-- helloWorld.deploy: '{IO, Exception} ServiceHash HttpRequest HttpResponse
+-- helloWorld.deploy =
+--     Cloud.main do
+--         deployHttp Environment.default() helloWorld.service
+
+{-
+    After updating the codebase and running `helloWorld.deploy`
+
+    ```
+        > run helloWorld.deploy
+    ```
+
+    one can fetch the with httpclient after installing it
+
+    ```
+        > lib.install @unison/httpclient
+    ```
+-}
+
+-- helloWorld.call: Text -> Text -> '{IO, Exception} Text
+-- helloWorld.call user serviceHash = do
+--     use http_2_2_2.HttpResponse isSuccess
+--     uri = parse ("https://" ++ user ++ ".unison-services.cloud/h/" ++ serviceHash ++ "/")
+--     response = Http.run do
+--         Http.get uri
+--     if isSuccess response then
+--         bodyText response
+--     else
+--         Exception.raise (failure "didn't receive a successful response" response)
+
+-- helloWorld.specificCall : '{IO, Exception} Text
+-- helloWorld.specificCall = do
+--     !(helloWorld.call "dvberkel" "ey2w6ggm4mvytm2dpx3qfg45dzynopfa6vw7a7n4mstviicn2axq")
