@@ -27,7 +27,7 @@
 
 -- helloWorld : '{IO, Exception} ()
 -- helloWorld = do
---     printLine "Hello, World!"
+--     printLine "Hello, Booster Conf!"
 
 {-
     The Unison Codebase Manager (ucm) picked up the file change and suggest to
@@ -54,7 +54,7 @@
 
 -- helloWorld.service : HttpRequest -> HttpResponse
 -- helloWorld.service _ =
---     HttpResponse.ok (Body (Text.toUtf8 "Hello, World!"))
+--     HttpResponse.ok (Body (Text.toUtf8 "Hello, Booster Conf!"))
 
 {-
     And define a deployment.

@@ -1,0 +1,262 @@
+{-
+    We first have to create a project. With Unison installed and the
+    _Unison Code Manager_ started, the following command will get us
+    going
+
+    ```
+        project.create wordle
+    ```
+-}
+
+{-
+    Next we will setup some data types, to model the Wordle domain.
+
+    We start with a `Guess`. A guess details which character occurs in a
+    certain position.
+-}
+
+type Guess = Guess [(Char, Nat)]
+
+{-
+    We introduce a new _algebraic data type_ with the `type` keyword. It
+    has only one constructor, also named `Guess`, that accepts a `List`
+    of `Tuple`s of `Char`acter and `Nat`ural number.
+-}
+
+
+{-
+    It would  be nice to be able to construct a `Guess` from `Text`, Unisons
+    string data type. Let's define `Guess.fromText` by giving the signature
+    and the implementation.
+
+    We make sure to normalize the input by trimming whitespace and converting
+    to lowercase.
+-}
+
+Guess.fromText : Text -> Guess
+Guess.fromText input =
+    input
+        |> normalize
+        |> toCharList
+        |> List.indexed
+        |> Guess
+
+{-
+    Since we will be normalize `Text` more often, we created a separate
+    function
+-}
+
+normalize : Text -> Text
+normalize input =
+    input
+        |> trim
+        |> Text.toLowercase
+
+{-
+    Similarly, we introduce a `Target` as well. Here we keep track of of the
+    number of occurences as well
+-}
+
+type Target = Target (Map Char Nat) (Set (Char, Nat))
+
+{-
+    Again, like we did for `Guess`, we would love to construct a `Target`
+    from a `Text`.
+-}
+
+Target.fromText : Text -> Target
+Target.fromText input =
+    countLetters : [Char] -> Map Char Nat
+    countLetters cs =
+        cs
+            |> List.sort
+            |> groupConsecutive
+            |> List.map (List.Nonempty.head &&& List.Nonempty.size)
+            |> Map.fromList
+    characters =
+        input
+            |> normalize
+            |> toCharList
+
+    Target (countLetters characters) (characters |> List.indexed |> Set.fromList)
+
+{-
+    To inform the player how well the `Guess` matches the `Target`, we need
+    a way to differentiate a character being in its place, a character being
+    present in the `Target` and a character not found in the `Target`.
+-}
+
+type Result 
+    = NotFound Char
+    | Exists Char
+    | InPlace Char
+
+{-
+    Next we want to `score` a `Guess` for a `Target`.
+-}
+
+Guess.score : Guess -> Target -> [Result]
+Guess.score guess target =
+    helper : (Target, [Result]) -> (Char, Nat) -> (Target, [Result])
+    helper = cases
+        (Target m cs, acc), (c, i) ->
+            if Set.contains (c, i) cs then
+                (Target (adjust Nat.decrement c m) cs, acc :+ (InPlace c))
+            else
+                match Map.get c m with
+                    None -> (Target m cs, acc :+ (NotFound c))
+                    Some 0 -> (Target m cs, acc :+ (NotFound c))
+                    Some _ -> (Target (adjust Nat.decrement c m) cs, acc :+ (Exists c))
+                
+    (Guess indexedCharacters) = guess
+    (_, result) = List.foldLeft helper (target, []) indexedCharacters
+    result
+
+{-
+
+    As a next step we would like to render to the console a sequence of
+    `Result`s.
+
+    In order to colorize the output we will use the library `terminus`, which
+    we get from share with the following command for the ucm.
+
+    ```
+    lib.install @runarorama/terminus
+    ```
+-}
+
+{-
+    Then we can render a series of `Guess`es to the console
+-}
+
+renderGuesses : [[Result]] ->{IO, Exception} ()
+renderGuesses guesses =
+    renderChar : Result ->{IO, Exception} ()
+    renderChar = cases
+        NotFound c ->
+            bg (Standard IsoColor.Black)
+            fg (Standard IsoColor.White)
+            c |> ascii.toUpper |> Char.toText |> print 
+        Exists c ->
+            bg (Standard IsoColor.Black)
+            fg (Standard IsoColor.Yellow)
+            c |> ascii.toUpper |> Char.toText |> print 
+        InPlace c ->
+            bg (Standard IsoColor.Black)
+            fg (Standard IsoColor.Green)
+            c |> ascii.toUpper |> Char.toText |> print
+    renderRow : [Result] ->{IO, Exception} ()
+    renderRow row =
+        List.foreach renderChar row
+    List.foreach (renderRow >> newLine) guesses
+
+{-
+    Lets accept user input.
+
+    We normalized it and look it up in a set of valid words. If it is not 
+    in the dictionary we prompt the user to proceed.
+
+    Notice that we `Ask` the dictionary via the `Ask` ability.
+-}
+
+getUserInput :'{IO, Exception, Ask (Set Text)} Guess
+getUserInput = do
+    input = readLine()
+    normalized = normalize input
+    if Text.size normalized != 5 then
+        printLine "🖐 guess must be a 5 letter word"
+        getUserInput()
+    else
+        dictionary = ask
+        if Set.contains normalized dictionary then
+            fromText normalized
+        else
+            if overrideLookup normalized then
+                fromText normalized
+            else
+                getUserInput()
+
+overrideLookup : Text ->{IO, Exception} Boolean
+overrideLookup normalized =
+    use Text ++
+    printLine ("🤔 That wasn't in the dictionary.\nWould you like to use "
+            ++ normalized
+            ++ " as your guess?"
+    )
+    yesNo()
+
+yesNo : '{IO, Exception} Boolean
+yesNo = do
+    printLine "enter \"y\" or \"n\""
+    input = readLine() |> normalize
+    match input with
+        "y" -> true
+        "n" -> false
+        _ -> yesNo()
+
+{-
+    Next we will write the gameLoop
+-}
+
+gameLoop: Nat -> Target -> [[Result]] ->{IO, Exception, Ask (Set Text)} ()
+gameLoop turn target pastGuesses =
+    use List :+
+    use Nat + >=
+    if turn >= 6 then
+        printLine "Alas! Better luck next time! 🤡"
+    else
+        guess = getUserInput()
+        result = Guess.score guess target
+        results = pastGuesses :+ result
+        renderGuesses results
+        if isVictory result then
+            printLine "🎉 Yay! 🎊"
+        else
+            gameLoop (turn + 1) target results
+
+isVictory : [Result] -> Boolean
+isVictory result =
+    List.all (cases
+        InPlace _ -> true
+        _ -> false) result
+
+{-
+    Next we want to load a dictionary of valid words
+-}
+
+loadDictionary : FilePath -> {IO, Exception} Set Text
+loadDictionary filePath =
+    if FilePath.exists filePath then
+        printLine "📚 Dictionary found! This may take a second... ⏰"
+        text =  readFileUtf8 filePath
+        t = lines text |> Set.fromList
+        printLine "📗 Dictionary created."
+        t
+    else
+        Exception.raise (Generic.failure "Dictionary file not found" filePath)
+
+{-
+    Finally we will tie all the components together
+-}
+
+main: '{IO, Exception} ()
+main = do
+  printLine "🥳 Welcome to WORDLE!"
+  filePath = FilePath "dict"
+  dictionary = loadDictionary filePath
+  target = "party"
+  if Boolean.not (Text.size target === 5) then
+    Exception.raise
+      (Generic.failure
+        "The word of the day must be 5 letters long" target)
+  else
+    printLine "Guess a five letter word"
+    provide dictionary do
+      gameLoop 0 (Target.fromText target) [[]]
+
+{-
+    There are stretch goals
+
+    * write a Wordle solver
+    
+-}

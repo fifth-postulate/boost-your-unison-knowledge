@@ -10,6 +10,7 @@
 
 # Topics
 * [First Glance](./topic/glance.md)
+* [Learning Labs](./topic/labs.md)
 
 # Appendices
 * [Installation](./appendix/installation.md)
