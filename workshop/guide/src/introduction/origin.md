@@ -26,7 +26,7 @@ a cost because data often needs to be serialized to be send over the wire only
 to be deserialized on the other side.
 Or data is fetched from a database that needs help in describing all the
 intricate details of the model, which is prone to various errors.
-Or the deploymentis, which luckily are described in code, are nonetheless
+Or the deployments, which luckily are described in code, are nonetheless
 written in a type-unsafe language, vastly differing from the one in which the
 application is written.
 
