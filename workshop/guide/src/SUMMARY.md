@@ -6,6 +6,7 @@
 # Introduction
 * [Origin](./introduction/origin.md)
 * [Community](./introduction/community.md)
+* [Challenges](./introduction/challenges.md)
 
 # Topics
 * [First Glance](./topic/glance.md)
