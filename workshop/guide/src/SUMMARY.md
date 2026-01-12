@@ -11,6 +11,7 @@
 # Topics
 * [First Glance](./topic/glance.md)
 * [Learning Labs](./topic/labs.md)
+* [Cloud Labs](./topic/cloud-labs.md)
 
 # Appendices
 * [Installation](./appendix/installation.md)

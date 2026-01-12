@@ -1,0 +1,90 @@
+
+{-
+    We follow along with the Hello World with Unison Cloud at
+    https://www.unison.cloud/learn/http-hello-world/
+
+    We have already installed Unison, signed up for Unison Cloud and
+    authenticated our installation.
+-}
+
+{-
+    Create an empty project to work from. You can do this with the following
+    command in a running ucm.
+
+    ```
+       project.create-empty booster-cloud-start 
+    ```
+-}
+
+{-
+    Next we pull in the `cloud-start` library with the command
+
+    ```
+        pull @unison/cloud-start/releases/latest
+    ```
+-}
+
+{-
+    Now we will edit the following definition in our editor. We can load it
+    by executing the command
+
+    ```
+        edit exercises.ex1_quickstart.deploy
+    ```
+
+    It will place the follow code at the top of your file.
+
+    ```
+        exercises.ex1_quickstart.deploy : '{IO, Exception} URI
+        exercises.ex1_quickstart.deploy =
+          todo
+            "Implement the deployment function, the http service to deploy is called `ex1_quickstart.helloWorld.logic`"
+    ```
+-}
+
+exercises.ex1_quickstart.deploy : '{IO, Exception} URI
+exercises.ex1_quickstart.deploy = Cloud.main do
+    helloService = deployHttp exercises.env() examples.helloWorld.logic
+    serviceName = ServiceName.named "hello-booster"
+    ServiceName.assign serviceName helloService
+
+
+{-
+    We will be working with the above code while progressing through the lab. 
+-}
+
+{-
+    A http handler is nothing more then a service that accepts a `HttpRequest`
+    and returns a `HttpResponse`.
+
+    It is already created and can be viewed with
+
+    ```
+        view helloWorld.logic
+    ```
+
+    Its fully qualified name is `examples.helloWorld.logic`
+-}
+
+{-
+    We want to deploy this in our `deploy` function
+
+    You can do that with `deployHttp`
+-}
+
+{-
+    Next want to name the service so that we can use that name instead of its
+    hash. You can create a named service with `ServiceName.named`
+
+    and assign it to the hello service with `ServiceName.assign`
+-}
+
+{-
+    This is all there is to it.
+
+    We can now run the `deploy` function with
+
+    ```
+        run exercises_ex1_quickstart.deploy
+    ```
+-}

@@ -12,3 +12,5 @@ It is a great way to take a deep dive into Unison. Even though there are
 various hints, tips and tricks, you still find a transcript in
 `examples/wordle.u`.
 
+There are also challenges for Unison Cloud, which deserve their onw section.
+
