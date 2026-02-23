@@ -1,8 +1,14 @@
 blockquote {
-    border-left-style: solid;
-    border-left-width: 5px;
-    border-left-color: gray;
-    background-color: #F2F3F4;
-    padding-left: 2em;
-    padding-right: 2em;
+  border-left-style: solid;
+  border-left-width: 5px;
+  border-left-color: gray;
+  background-color: #F2F3F4;
+  padding-left: 2em;
+  padding-right: 2em;
+}
+
+.info {
+  position: absolute;
+  top: 3px;
+  right: 5px;
 }
