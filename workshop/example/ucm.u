@@ -1,0 +1,262 @@
+
+
+
+{-
+    We are going to show you some of the features that the
+    Unison Codebase Manager (ucm) provides.
+-}
+
+{-
+    Not strictly part of the ucm, the Unison languge allows to set a namespace
+    for the file you are working in.
+-}
+
+namespace ucm
+
+
+{-
+    Instead of relying on comments to describe ucm features, we are leveraging
+    Unison `Doc` type.
+-}
+README : Doc
+README = {{
+    # Unison Codebase Manager
+
+    ## Graphical User Interface
+
+        First we are going to start a `ui` with the following command
+
+        ```plain
+        > ui
+        ```
+
+        This will open your preferred browser and shows the project.
+
+        From there you can examine
+
+        * The terms in your project.
+        * Search for code.
+        * Browse documentation.
+
+    ### Exercises
+
+        1. Find the definition of {egcd}.
+        2. What does {egcd} do?
+
+    ## Finding Terms
+
+        Instead of relying on the `ui` to navigate Unison terms, you can also
+        `find` them.
+
+        ```plain
+        > find egcd
+        ```
+
+        You can even find by signature
+
+        {{ Aside {{ Note the colon ( `:` ) used in the find by signature command. }} }}
+
+        ```plain
+        > find : Nat -> Nat -> (Nat, Int, Int)
+        ```
+
+    ### Exercises
+
+        1. Find the name of the function that converts a {type Nat} to an {type Int}.
+        2. How many terms can you find with the name `length`?
+
+
+    ## Viewing Terms
+
+        Once found you can also `view` the term.
+
+        ```plain
+        > view ucm.egcd
+        ```
+
+        Or, since the name can unambiguously be determined:
+
+        ```plain
+        > view egcd
+        ```
+
+        The real super power comes when your system has
+        [fzf](https://github.com/junegunn/fzf);
+
+        {{ Blockquote {{ a general-purpose command-line fuzzy finder. }} }}
+
+        ```plain
+        > view
+        ```
+
+    ### Exercises
+
+        1. view the definition of {Nat.gcd} and {Int.gcd}.
+        2. What did you learn?
+        3. Does base have your favorite function?
+
+    ## Adding Terms
+
+        The ucm doesn't only allow inspecting the current codebase.
+        It also allows to alter it.
+
+        Write the following function, without the `ucm.README` prefix, in a
+        scratch file where you started ucm.
+
+        @source{ucm.README.message}
+
+        When you save the file, ucm pick up the changes and offers to update
+        the codebase with it.
+
+        Use the command `update` to do so
+
+        ```plain
+        > update
+        ```
+
+    ### Exercises
+
+        1. Add a definition of your own. For example define a term name of type {type Text}.
+        2. What happens when you change a definition, and save the file?
+
+    ## Updating Terms
+
+        When you change an existing definition the same `update` command allows
+        you to update the codebase with the definition.
+        Later we will see an example that the ucm can determine which code
+        likely needs changing.
+
+    ### Exercises
+
+        1. update your {README.message} function by adding an exclamation mark.
+        2. update your name to include a adjective.
+
+    ## Dependencies
+
+        If you want to know what dependencies go into a definition of a term,
+        you can use the `dependencies` command.
+
+        ```plain
+        > dependencies egcd
+        ```
+
+    ### Exercises
+
+        1. Find the dependencies of your favourite function.
+
+    ## Dependents
+
+        If on the other hand you would like to know which code depends on a 
+        certain term, `dependents` comes to the rescue.
+
+        ```plain
+        > dependents egcd
+        ```
+    ### Exercises
+
+        1. Find the dependents of your favourite function.
+
+    ## Help
+
+        The Unison Codebase Manager is a versatile tool. I you want to know 
+        more make sure to use the `help` command.
+
+        ```plain
+        > help
+        ```
+
+    ### Exercise
+
+        1. How do you get help about a certain topic?
+        2. If you want to document the rational of a certain change to the codebase, what could you use?
+}}
+
+
+---
+
+{{
+    Calculates the [_modular inverse_](https://en.wikipedia.org/wiki/Modular_multiplicative_inverse)
+    of a number
+
+    ```
+        modular_inverse 3 37 
+    ```
+
+    Notice that `25 * 3` equals `75` which and
+
+    ```
+        2*37+1
+    ```
+
+    so
+
+    ```
+        (3*25) % 37
+    ```
+
+    hence, the modular multiplicative inverse of `3` modulo `37` is `25`.
+
+    
+}}
+README.hidden.modular_inverse: Nat -> Nat -> Optional Nat
+README.hidden.modular_inverse a modulus =
+    (g, s, _) = egcd a modulus
+    if g == 1 then
+        if s < +0 then
+            Some (modulus - (Int.abs s))
+        else
+            Some (Int.abs s)
+    else
+        None
+
+---
+
+README.name : Text
+README.name = "Daan"
+
+---
+
+message: Text -> Text
+message subject =
+    "Hello, " ++ subject ++ "!"
+
+
+---
+
+message: Text -> Text
+message subject =
+    "Hello, " ++ subject
+
+---
+
+{{
+    Determines the [greatest common divisor](https://en.wikipedia.org/wiki/Greatest_common_divisor)
+    of two {type Nat}ural numbers.
+
+    ```
+        (gcd, _, _) = egcd 37 51
+        gcd
+    ```
+
+    The two {type Int}egers returned can be used to represent the greatest
+    common divisor as a sum of the inputs
+
+    ```
+        (_, a, b) = egcd 37 51
+
+        (a * (Nat.toInt 37) + b * (Nat.toInt 51), a, b)  
+    ```
+}}
+egcd : Nat -> Nat -> (Nat, Int, Int)
+egcd u v =
+    -- contract: a = p*u + q*v, b = r*u + s*v
+    go : Nat -> Nat -> Int -> Int -> Int -> Int -> (Nat, Int, Int)
+    go a b p q r s =
+        if b == 0 then
+            (a, p, q)
+        else
+            quotient =
+                a / b
+                    |> Nat.toInt
+            go b (a%b) r s (p - quotient * r) (q - quotient * s)
+    go u v +1 +0 +0 +1
