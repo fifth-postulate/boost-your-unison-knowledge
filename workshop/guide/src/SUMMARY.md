@@ -13,6 +13,7 @@
 * [Learning Labs](./topic/labs.md)
 * [Cloud Labs](./topic/cloud-labs.md)
 * [Unison Codebase Manager](./topic/ucm.md)
+* [Documentation](./topic/doc.md)
 
 # Appendices
 * [Installation](./appendix/installation.md)

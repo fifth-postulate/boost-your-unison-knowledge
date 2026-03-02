@@ -1,0 +1,70 @@
+
+
+
+
+namespace doc
+
+README : Doc
+README = {{
+    # Documentation
+
+        In Unison documentation is a first-class citizen. There is a type
+        called {type Doc}.
+
+        Viewing the the type shows you a number of _constructors_ for the type.
+        This means that in principle you could have {hand_crafted}
+        documentation.
+
+        @source{hand_crafted}
+
+        {{hand_crafted}}
+
+        In practice you will use provided syntax. A block of text surrounded by
+        double braces; a pair of double '{' and double '}'.
+
+    ## Exercises
+
+        1. Explore the {type Doc} type and follow the link to it's tutorial.
+        2. Explore [contio](https://share.unison-lang.org/@dvberkel/contio/code/releases/1.1.0/latest/terms/README) a small library to create presentation with Unison {type Doc}s.
+        3. Write `feedback` term with type `Doc`. If you need inspiration look at {feedback}.
+}}
+
+
+---
+
+README.feedback: Doc
+README.feedback = {{
+    # Feedback
+
+        This documentat contains feedback about the workshop
+        _Code in Unison_.
+
+    {{ Folded true {{ *What is your overall assessment of the event?*  }} {{
+
+        Write your feedback here.
+    }}}}
+    
+    {{ Folded true {{ *Did the workshop achieve the program objective?*  }} {{
+
+        Yes/No. _Strikthrough what doesn't apply._
+
+        Optionally you could motivate your answer.
+    }}}}
+
+    
+    {{ Folded true {{ *Which aspect or topics of the workshop did you find most interesting?*  }} {{
+
+        Write your feedback here.
+    }}}}
+
+    {{ Folded true {{ *How do you think the workshop could be made more effective?*  }} {{
+
+        Write your feedback here.
+    }}}}
+}}
+
+---
+
+README.hand_crafted : Doc
+README.hand_crafted =
+    Bold (Word "Hello, Booster!")
