@@ -14,6 +14,7 @@
 * [Cloud Labs](./topic/cloud-labs.md)
 * [Unison Codebase Manager](./topic/ucm.md)
 * [Documentation](./topic/doc.md)
+* [Testing](./topic/testing.md)
 
 # Appendices
 * [Installation](./appendix/installation.md)

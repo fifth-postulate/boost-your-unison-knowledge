@@ -1,0 +1,310 @@
+
+
+namespace testing
+
+README : Doc
+README = {{
+    # Testing
+
+        Unison provides a means to test your code. As is often the case, there
+        is extensive [documentation about testing](https://www.unison-lang.org/docs/usage-topics/testing/).
+        Do make sure to look at that documentation as well.
+
+    ## Benefits of Content Addressable Code
+
+        Since Unison is build upon _content addressable code_ testing comes
+        with an awesome feature: *caching*!
+
+        So long definitions don't meaningfully change, there is no need to
+        rerun tests.
+
+        Your functions will have to be pure, i.e. do not have side-effects, but
+        we will come to that later. For now just bask in the glory of not
+        having to rerun tests when code doesn't change.
+
+    ## Subject under Test
+
+        It will be nice if we have a subject to test. For that we are going
+        to use our humble {egcd}.
+
+        @source{egcd}
+
+        It doesn't really matter what it does, or how it does it. We are going
+        to use it as a block box. You do have to trust me when I dictate the
+        test cases though.
+
+    ## Watch Expressions
+
+        If you are lucky enough to have seen various demonstrations during the
+        workshop, you might have seen _watch expression_ before. Those are
+        little snippets of code that the ucm will evaluate, kind of like a
+        Read-Eval-Print loop ( [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) )
+
+        ```plain
+        > "Hello, " ++ "World!"
+        ```
+
+        will evaluate to
+
+        ```
+            "Hello, " ++ "World!"
+        ```
+
+        Testing relies on a special variant of a watch expression; a
+        _test watch expression_. It is little more than a angle bracket (`>`)
+        preceded by the word "test".
+
+    ## Convention
+
+        There is a convention for tests in Unison. The convention dictates that
+        they are placed under the `tests` namespace under the term itself.
+
+        Furthermore; the convention describes to number various tests like
+        "ex1", "ex2" etcetera.
+
+        It is just a convention and you are free to choose your own convention.
+
+    ## First Test
+
+        Let's write our first test
+
+        @source{egcd.tests.ex1}
+
+        Don't forget to make a test watch expression for it. If everything is
+        done correctly you should see the ucm report something like:
+
+        ```plain
+            71 | test> egcd.tests.ex1 = test.verify do
+    
+            ✅ Passed Passed
+        ```
+
+        Once the code base is updated, you can ask to see the all test results
+        with the `test` command
+
+        ```plain
+        > test
+        ```
+
+
+        It outputs a series of known tests:
+
+        {{ Aside {{ Notice that is says that the test results are cached! }} }}
+
+        ```plain
+          Cached test results (`help testcache` to learn more)
+
+            1. testing.egcd.tests.ex1   ◉ Passed
+
+          ✅ 1 test(s) passing
+
+          Tip: Use view 1 to view the source of a test.
+        ```
+
+    ## Delayed Computations
+
+        {{ Aside {{
+            Unlike [Haskell](https://www.haskell.org/) Unison isn't
+            [_lazy evaluated_](https://en.wikipedia.org/wiki/Lazy_evaluation)
+
+            So Unison evaluates it's arguments. In order to delay that
+            evaluation it is a common practice among non-lazy language, like
+            Unison to wrap your argument in an abstraction, i.e. a wrap it 
+            in a anonymous function.
+
+            Since this happens often in Unison code there is syntac for it.
+        }} }}
+
+        When you view the {test.verify} function and look at it's signature,
+        it might be a bewildering experience:
+
+        @signature{test.verify}
+
+        First, there is all the stuff between curly brackets `{}`! Those are
+        abilities and we will get to them in the next section.
+
+        Second there is the single quote `'`! What is that?
+
+    ### Syntactic Sugar
+
+        You can define anonymous function with the following syntax:
+
+        ```
+            n -> n + 37 
+        ```
+
+        But what if we don't need the argument? We can use ignore it with an
+        underscore `_` saving our creativity when we really need to name
+        something.
+
+        ```
+            _ -> 37 
+        ```
+
+        To call a function you have to provide an argument
+
+        ```
+            (n -> n + 37)(51)
+        ```
+
+        or in the function without an argument name
+
+        ```
+           (_ -> 37)() 
+        ```
+
+
+        {{ Aside {{
+            I am about to tell a lie. For the function that produces a 37
+            without inspecting its argument the _inferred_ type signature is
+
+            @signature{README.actual_thirtyseven}
+
+            But that would open up an other can of worms.
+        }}}}
+
+        The unison compiler would provide the following types, respectively
+
+        @signature{README.add37}
+
+        @signature{README.thirtyseven}
+
+        There that interesting single quote `'Nat` again! But now we know it
+        is just syntactic sugar for the `() -> Nat`, nothing more nothing less.
+
+        It would also be cumbersome to keep on writing `_ -> block of code`.
+        The syntactic sugar for that is `do`
+
+        For example `do 37` is equivalent to
+
+        ```
+            do
+                37
+        ```
+    
+    ## Long Story Short
+
+        `test.verify` accepts a _delayed computation_ that produces a
+        {type List} of {type Result}.
+
+    ## What _Abilities_ does {test.verify} provide us with
+
+        Testing can be made more descriptive with:
+
+    ### {type Label}
+
+        Let's create variables for our test and label them:
+
+        @source{egcd.tests.ex2}
+
+        As is, nothing will chance. That is because the test passes. The real
+        difference comes when a test fails. We will create a faulty test.
+
+        @source{egcd.tests.faulty}
+
+        then we get information about the labeled values.
+
+        ```plain
+            🚫 FAILED 
+              egcd 37 51: 1
+              x: 37
+              y: 51
+              elements not equal
+              (1, 2)
+        ```
+
+        There is even a way to scope the {label}s with {labeled}
+
+    ### Property Based Testing
+
+        We can also test properties with {type Each} and {type Random}.
+
+        @source{egcd.tests.ex3}
+
+        Here {natIn} produces a {type Random} {type Nat} in a certain range.
+
+    ## Exercises
+
+        1. Write a test for your favorite function.
+        2. What properties does your favorite function has.
+}}
+
+
+test> egcd.tests.ex3 = test.verify do
+    Each.repeat 100
+    max = 1000
+    a = natIn 1 max
+    b = natIn 1 max
+    k = natIn 1 max
+
+    label "a" a
+    label "b" b
+    label "k" k
+
+    (g, _, _) = egcd a b
+
+    (h, _, _) = egcd (k * a) (k * b)
+
+    ensureEqual (k * g) h
+
+---
+
+test> egcd.tests.faulty = test.verify do
+    x = 37
+    y = 51
+
+    label "x" x
+    label "y" y
+
+    (g, _, _) = egcd 37 51
+
+    label ("egcd " ++ (Nat.toText x) ++ " " ++ (Nat.toText y)) g
+
+    ensureEqual g 2
+
+---
+
+test> egcd.tests.ex2 = test.verify do
+    x = 37
+    y = 51
+
+    label "x" x
+    label "y" y
+
+    (g, _, _) = egcd 37 51
+
+    label ("egcd " ++ (Nat.toText x) ++ " " ++ (Nat.toText y)) g
+
+    ensureEqual g 1
+
+
+---
+
+README.add37 n =
+    n + 37
+
+README.thirtyseven : () -> Nat
+README.thirtyseven _ =
+    37
+
+README.actual_thirtyseven _ =
+    51
+
+---
+
+> n -> n + 37
+> (n -> n + 37)(51)
+> _ -> 37
+> (_ -> 37)()
+
+---
+
+test> egcd.tests.ex1 = test.verify do
+    (g, _, _) = egcd 37 51
+
+    ensureEqual g 1
+
+
+---
+
+> "Hello, " ++ "World!"
