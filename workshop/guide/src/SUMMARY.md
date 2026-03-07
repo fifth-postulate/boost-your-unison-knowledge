@@ -17,6 +17,10 @@
 * [Testing](./topic/testing.md)
 * [Abilities](./topic/abilities.md)
 
+# Projects
+
+* [Feedback](./project/feedback.md)
+
 # Appendices
 * [Installation](./appendix/installation.md)
 * [Authenticate](./appendix/authenticate.md)

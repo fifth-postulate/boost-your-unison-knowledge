@@ -1,0 +1,1642 @@
+feedback.README : Doc
+feedback.README =
+  {{
+  # Feedback Application
+  
+    This project demonstrates how to create a little application that can
+    receive feedback.
+    
+    It is a web service where people can send jsonified {type Doc}s to, that
+    get stored in a database.
+    
+    ``` mermaid
+    sequenceDiagram
+    Note left of Booster: Sends Feedback
+    Booster->>Server: Doc
+    Note right of Server: Receives Feedback
+    Server->>Booster: 👍
+    ```
+
+  ## Project
+
+    If you like you could write a Unison function that sends {feedback}
+    {type Doc} to
+    
+    ```plain
+     https://dvberkel.unison-services.cloud/s/booster-unison-feedback/feedback/
+    ```
+  }}
+
+
+
+
+
+
+
+namespace feedback
+
+logic : OrderedTable Instant Doc -> '{Route, Exception, Remote} ()
+logic table =
+  use Route <|>
+  logic.info table <|> logic.receive table <|> logic.retrieve table <|> logic.remove table
+
+logic.remove : OrderedTable Instant Doc -> '{Route, Remote} ()
+logic.remove table = do
+    use Parser /
+    instant = route DELETE (
+        (s "feedback" / Parser.int / Parser.nat)
+            => cases seconds, nanos -> Instant seconds nanos)
+    OrderedTable.delete table instant
+    ok.json (Object
+        [ ("state", Text "successful")
+        , ("message", Text "removed feedback")
+        , ("instant", Instant.toJson instant)]) 
+---
+
+logic.info : OrderedTable Instant Doc -> '{Route, Remote} ()
+logic.info table = do
+    noCapture GET (s "feedback")
+    table
+        |> OrderedTable.toStream
+        |> Stream.toList
+        |> List.map (at1 >> Instant.toJson)
+        |> Array
+        |> ok.json
+
+Instant.toJson : Instant -> Json
+Instant.toJson = cases
+    Instant seconds nanoSeconds ->
+        Object
+            [ ("tag", Text "Instant")
+            , ("seconds", Number (Int.toText seconds))
+            , ("nano", Number (Nat.toText nanoSeconds))
+            ]
+
+logic.retrieve : OrderedTable Instant Doc -> '{Route, Remote, Exception} ()
+logic.retrieve table = do
+    use Parser /
+    instant = route GET (
+        (s "feedback" / Parser.int / Parser.nat )
+            => cases seconds, nanos -> Instant seconds nanos)
+    doc = OrderedTable.read table instant
+    ok.json (Doc.toJson doc)
+
+logic.receive :
+  OrderedTable Instant Doc -> '{Route, Exception, Remote} ()
+logic.receive table =
+  do
+    noCapture POST (s "feedback")
+    match 
+      catch do
+        text = bodyUtf8()
+        Json.fromText text
+     with
+      Right json ->
+        match Doc.fromJson json with
+          Right doc ->
+            tick = Remote.now()
+            OrderedTable.write table tick doc
+            ok.json
+              (Object
+                [ ("state", Text "successful")
+                , ("message", Text "Thank you for your feedback")
+                , ("instant", Instant.toJson tick)])
+          Left failure -> raiseBadRequest "failed to parse Doc" failure
+      Left failure -> raiseBadRequest "failed to parse json" failure
+
+
+
+---
+
+feedback.README : Doc
+feedback.README =
+  {{
+  # Feedback Application
+  
+    This project demonstrates how to create a little application that can
+    receive feedback.
+    
+    It is a web service where people can send jsonified {type Doc}s to, that
+    get stored in a database.
+    
+    ``` mermaid
+    sequenceDiagram
+    Note left of Booster: Sends Feedback
+    Booster->>Server: Doc
+    Note right of Server: Receives Feedback
+    Server->>Booster: 👍
+    ```
+  }}
+
+feedback.logic.receive : OrderedTable Instant Doc -> '{Route, Remote, Exception} ()
+feedback.logic.receive table =
+  do
+    noCapture POST (s "feedback")
+    match 
+      catch do
+        text = bodyUtf8()
+        Json.fromText text
+     with
+      Right json ->
+        match Doc.fromJson json with
+          Right doc ->
+            tick = Remote.now()
+            OrderedTable.write table tick doc
+            ok.json
+              (Object
+                [ ("state", Text "successful")
+                , ("message", Text "Thank you for your feedback")
+                ])
+          Left failure -> raiseBadRequest "failed to parse Doc" failure
+      Left failure -> raiseBadRequest "failed to parse json" failure
+
+-- The definitions below no longer typecheck with the changes above.
+-- Please fix the errors and try `update` again.
+
+feedback.deploy : '{IO, Exception} URI
+feedback.deploy = Cloud.main do
+    environment = Environment.default()
+    database = Database.named "booster-feedback"
+    Database.assign database environment
+    table = OrderedTable.named database "feedback-documents" instantOrdering
+    serviceHash = deployHttp environment (Route.run (feedback.logic table))
+    ServiceName.assign (ServiceName.named "booster-unison-feedback") serviceHash
+
+feedback.instantOrdering : Instant -> Instant -> Ordering
+feedback.instantOrdering left right =
+    if left < right then
+        Less
+    else if right > left then
+        Greater
+    else
+        Equal
+
+
+feedback.logic : OrderedTable Instant Doc -> '{Route, Remote, Exception} ()
+feedback.logic table =
+  use Route <|>
+  logic.info <|> (logic.receive table)
+
+
+
+---- Anything below this line is ignored by Unison.
+
+
+
+
+
+namespace feedback
+
+README: Doc
+README = {{
+    # Feedback Application
+
+        This project demonstrates how to create a little application that can
+        receive feedback.
+
+        It is a web service where people can send jsonified {type Doc}s to,
+        that get stored in a database.
+
+        ```mermaid
+sequenceDiagram
+  Note left of Booster: Sends Feedback
+  Booster->>Server: Doc
+  Note right of Server: Receives Feedback
+  Server->>Booster: 👍
+        ```
+}}
+
+
+logic.receive : '{Route, Exception}()
+logic.receive = do
+    noCapture POST (s "feedback")
+    match (catch do
+        text = bodyUtf8()
+        Json.fromText text) with
+            Right json ->
+                match Doc.fromJson json with
+                    Right doc ->
+                        ok.json (Object [("state", Text "successful"), ("message", Text "Thank you for your feedback")])
+
+                    Left failure ->
+                        raiseBadRequest "failed to parse Doc" failure
+
+            Left failure ->
+                raiseBadRequest "failed to parse json" failure
+
+
+    
+---
+
+logic : '{Route}()
+logic = 
+    use Route <|>
+    logic.info <|> logic.receive
+
+logic.info : '{Route}()
+logic.info = do
+    noCapture GET (s "feedback")
+    ok.text "You can send feedback via a POST request"
+
+logic.receive : '{Route}()
+logic.receive = do
+    noCapture POST (s "feedback")
+    ok.json (Object [("state", Text "successful"), ("message", Text "Thank you for your feedback")])
+    
+
+deploy : '{IO, Exception} URI
+deploy = 
+    Cloud.main do
+        serviceHash = deployHttp Environment.default() (run feedback.logic)
+        ServiceName.assign (ServiceName.named "booster-unison-feedback") serviceHash
+
+
+deployLocal : '{IO, Exception} ()
+deployLocal = do
+    stop = serveSimple feedback.logic 5683
+    printLine "Server running on port 5683. Press <enter> to stop."
+    _ = readLine()
+    stop()
+    
+---
+
+service : HttpRequest -> HttpResponse
+service _ =
+    HttpResponse.ok (Body (Text.toUtf8 "Thank you for your feedback"))
+
+
+deploy : '{IO, Exception} URI
+deploy = 
+    Cloud.main do
+        serviceHash = deployHttp Environment.default() feedback.service
+        ServiceName.assign (ServiceName.named "booster-unison-feedback") serviceHash
+        
+---
+
+test> Doc.fromJson.tests.roundTrip = test.verify do
+    [ feedback
+    , 
+        {{ # Test Document
+
+            This should survive the round trip
+
+            ```plain
+            >  echo "Hello, World!"
+            ```
+        }}    
+    ]
+        |> List.foreach Doc.fromJson.tests.harness
+
+---
+
+Doc.fromJson.tests.harness : Doc ->{Exception} ()
+Doc.fromJson.tests.harness original =
+    actual =
+        original
+            |> Doc.toJson
+            |> Doc.fromJson
+    match actual with
+        Right rehydrated | rehydrated === original -> ()
+        Right rehydrated -> test.raiseFailure "did not survive roundtrip" (original, rehydrated)
+        Left failure -> test.raiseFailure "failed to rehydrate" failure
+
+Doc.fromJson.boolean : Json -> Either Doc.fromJson.Failure Boolean
+Doc.fromJson.boolean = cases
+    Boolean context ->
+        Right context
+
+    context ->
+        Left (NotAn "Boolean" context)
+                        
+Doc.fromJson.text : Json -> Either Doc.fromJson.Failure Text
+Doc.fromJson.text = cases
+    Text context ->
+        Right context
+
+    context ->
+        Left (NotAn "Text" context)
+
+Doc.fromJson.number : Json -> Either Doc.fromJson.Failure Nat
+Doc.fromJson.number = cases
+    Number source ->
+        match Nat.fromText source with
+            Some n -> Right n
+
+            None ->
+                Left (Failure.NotANat source)
+
+    context ->
+        Left (NotAn "Number" context)
+
+Doc.fromJson.optional : (Json -> Either Doc.fromJson.Failure a) -> Json -> Either Doc.fromJson.Failure (Optional a)
+Doc.fromJson.optional construct context =
+    match context with
+        Object keys ->
+            match ifPresent "tag" keys with
+                Some (Text "Optional") ->
+                    match ifPresent "kind" keys with
+                        Some (Text "None") -> 
+                            Right None
+
+                        Some (Text "Some") ->
+                            match ifPresent "value" keys with
+                                Some json ->
+                                    json
+                                        |> construct
+                                        |> Either.mapRight (Some)
+
+                                None ->
+                                   Left (MissingValue context)         
+
+                        Some json ->
+                            Left (UnknownKind json)
+
+                        None ->
+                            Left (MissingKey "kind")
+
+                _ ->
+                    Left (NotAn "Optional" context)
+
+        _ ->
+            Left (NotAn "Object" context)
+
+Doc.fromJson.list : (Json -> Either Doc.fromJson.Failure a) -> Json -> Either Doc.fromJson.Failure (List a)
+Doc.fromJson.list construct context =
+    match context with
+        Array elements ->
+            candidates =
+                elements
+                    |> List.map construct
+            if List.all isRight candidates then
+                candidates
+                    |> List.map Either.toBug
+                    |> Right
+            else
+                candidates
+                    |> List.indexed
+                    |> List.filterMap
+                        ( cases
+                            (Left a, n) -> Some (a,n)
+                            _ -> None
+
+                        )
+                    |> ListFailures context
+                    |> Left
+
+        _ ->
+            Left (NotAn "Array" context)
+
+type Doc.fromJson.Failure
+    = NotAn Text Json
+    | MissingTag
+    | UnknownTag Json
+    | MissingValue Json
+    | MissingKey Text
+    | UnknownKind Json
+    | ListFailures Json [(Doc.fromJson.Failure, Nat)]
+    | NotANat Text
+
+Doc.fromJson : Json -> Either Doc.fromJson.Failure Doc
+Doc.fromJson json =
+    match json with
+        Object keys ->
+            at : Text -> (Json -> Either Doc.fromJson.Failure a) -> Either Doc.fromJson.Failure (a -> b) -> Either Doc.fromJson.Failure b
+            at key extract transform =
+                match ifPresent key keys with
+                    Some json ->
+                        json
+                            |> extract
+                            |> thenApply transform
+                        
+                    None ->
+                        Left (MissingKey key)
+
+            thenApply : Either a (b -> c) -> Either a b -> Either a c
+            thenApply v u =
+                match (u, v) with
+                    (Right a, Right f) -> Right (f a)
+                    (Right a, Left a') -> Left a'
+                    (Left a, _) -> Left a
+
+
+            succeed : a -> Either Doc.fromJson.Failure a
+            succeed =
+                Right
+
+
+            match ifPresent "tag" keys with
+                Some (Text "Blankline") ->
+                    Blankline
+                        |> succeed
+                
+                Some (Text "Linebreak") ->
+                    Linebreak
+                        |> succeed
+                
+                Some (Text "SectionBreak") ->
+                    SectionBreak
+                        |> succeed
+                        
+                Some (Text "Word") ->
+                    Word
+                        |> succeed
+                        |> at "value" fromJson.text
+                
+                Some (Text "Code") ->
+                    Code
+                        |> succeed
+                        |> at "value" Doc.fromJson
+                                    
+                Some (Text "Bold") ->
+                    Bold
+                        |> succeed
+                        |> at "value" Doc.fromJson
+                
+                Some (Text "Italic") ->
+                    Italic
+                        |> succeed
+                        |> at "value" Doc.fromJson
+                                    
+                Some (Text "Strikethrough") ->
+                    Strikethrough
+                        |> succeed
+                        |> at "value" Doc.fromJson
+                
+                Some (Text "Blockquote") ->
+                    Blockquote
+                        |> succeed
+                        |> at "value" Doc.fromJson
+                                    
+                Some (Text "Aside") ->
+                    Aside
+                        |> succeed
+                        |> at "value" Doc.fromJson
+                
+                Some (Text "Group") ->
+                    Group
+                        |> succeed
+                        |> at "value" Doc.fromJson
+
+                Some (Text "CodeBlock") ->
+                    CodeBlock
+                        |> succeed
+                        |> at "language" fromJson.text
+                        |> at "value" Doc.fromJson
+                                                            
+                Some (Text "Style") ->
+                    Style
+                        |> succeed
+                        |> at "class" fromJson.text
+                        |> at "value" Doc.fromJson
+                                                            
+                Some (Text "Anchor") ->
+                    Anchor
+                        |> succeed
+                        |> at "identifier" fromJson.text
+                        |> at "value" Doc.fromJson
+                
+                Some (Text "Tooltip") ->
+                    Tooltip
+                        |> succeed
+                        |> at "value" Doc.fromJson
+                        |> at "hint" fromJson
+                                                            
+                Some (Text "NamedLink") ->
+                    NamedLink
+                        |> succeed
+                        |> at "value" Doc.fromJson
+                        |> at "url" Doc.fromJson
+                                                            
+                Some (Text "Folded") ->
+                    Folded
+                        |> succeed
+                        |> at "folded" fromJson.boolean
+                        |> at "title" Doc.fromJson
+                        |> at "value" Doc.fromJson
+                                                            
+                Some (Text "Callout") ->
+                    Callout
+                        |> succeed
+                        |> at "icon" (fromJson.optional Doc.fromJson)
+                        |> at "value" Doc.fromJson
+
+                Some (Text "Image") ->
+                    Image
+                        |> succeed
+                        |> at "value" Doc.fromJson
+                        |> at "url" Doc.fromJson
+                        |> at "caption" (fromJson.optional Doc.fromJson)
+
+                Some (Text "Paragraph") ->
+                    Paragraph
+                        |> succeed
+                        |> at "value" (fromJson.list Doc.fromJson)
+
+                Some (Text "BulletedList") ->
+                    BulletedList
+                        |> succeed
+                        |> at "value" (fromJson.list Doc.fromJson)
+
+                Some (Text "Join") ->
+                    Join
+                        |> succeed
+                        |> at "value" (fromJson.list Doc.fromJson)
+                
+                Some (Text "UntitledSection") ->
+                    UntitledSection
+                        |> succeed
+                        |> at "value" (fromJson.list Doc.fromJson)
+
+                Some (Text "Column") ->
+                    Column
+                        |> succeed
+                        |> at "value" (fromJson.list Doc.fromJson)
+
+                Some (Text "NumberedList") ->
+                    NumberedList
+                        |> succeed
+                        |> at "index" fromJson.number
+                        |> at "value" (fromJson.list Doc.fromJson)
+
+                Some (Text "Section") ->
+                    Section
+                        |> succeed
+                        |> at "title" Doc.fromJson
+                        |> at "value" (fromJson.list Doc.fromJson)
+
+                Some (Text "Special") ->
+                    Word
+                        |> succeed
+                        |> at "comment" fromJson.text
+
+                Some (Text "Table") ->
+                    Table
+                        |> succeed
+                        |> at "value" (fromJson.list (fromJson.list Doc.fromJson))
+                
+                Some v ->
+                    Left (UnknownTag v)
+
+                None ->
+                    Left (MissingTag)
+        _ ->
+            Left (NotAn "Object" json)
+
+
+
+test> Doc.fromJson.tests.tableTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Table")
+            , ("value", Array
+                [ Array [Object [("tag", Text "Word"), ("value", Text "header 1")], Object [("tag", Text "Word"), ("value", Text "header 2")]]
+                , Array [Object [("tag", Text "Word"), ("value", Text "row 1 / value 2")], Object [("tag", Text "Word"), ("value", Text "row 1 / value 2")]]
+                ])
+            ])
+        (Table
+            [ [Word "header 1", Word "header 2"]
+            , [Word "row 1 / value 2", Word "row 1 / value 2"]
+            ])
+
+
+--- 
+test> Doc.fromJson.tests.sectionTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Section")
+            , ("title", Object [("tag", Text "Word"), ("value", Text "title")])
+            , ("value", Array
+                [ Object [("tag", Text "Word"), ("value", Text "a")]
+                , Object [("tag", Text "Word"), ("value", Text "word")]
+                ])
+            ])
+        (Section (Word "title") [Word "a", Word "word"])
+
+---
+
+test> Doc.fromJson.tests.numberedListTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "NumberedList")
+            , ("index", Number "37")
+            , ("value", Array
+                [ Object [("tag", Text "Word"), ("value", Text "a")]
+                , Object [("tag", Text "Word"), ("value", Text "word")]
+                ])
+            ])
+        (NumberedList 37 [Word "a", Word "word"])
+
+---
+
+test> Doc.fromJson.tests.columnTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Column")
+            , ("value", Array
+                [ Object [("tag", Text "Word"), ("value", Text "a")]
+                , Object [("tag", Text "Word"), ("value", Text "word")]
+                ])
+            ])
+        (Column [Word "a", Word "word"])
+
+---
+
+test> Doc.fromJson.tests.untitledsectionTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "UntitledSection")
+            , ("value", Array
+                [ Object [("tag", Text "Word"), ("value", Text "a")]
+                , Object [("tag", Text "Word"), ("value", Text "word")]
+                ])
+            ])
+        (UntitledSection [Word "a", Word "word"])
+
+---
+test> Doc.fromJson.tests.joinTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Join")
+            , ("value", Array
+                [ Object [("tag", Text "Word"), ("value", Text "a")]
+                , Object [("tag", Text "Word"), ("value", Text "word")]
+                ])
+            ])
+        (Join [Word "a", Word "word"])
+
+---
+
+test> Doc.fromJson.tests.bulletedListTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "BulletedList")
+            , ("value", Array
+                [ Object [("tag", Text "Word"), ("value", Text "a")]
+                , Object [("tag", Text "Word"), ("value", Text "word")]
+                ])
+            ])
+        (BulletedList [Word "a", Word "word"])
+
+---
+
+test> Doc.fromJson.tests.paragraphTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Paragraph")
+            , ("value", Array
+                [ Object [("tag", Text "Word"), ("value", Text "a")]
+                , Object [("tag", Text "Word"), ("value", Text "word")]
+                ])
+            ])
+        (Paragraph [Word "a", Word "word"])
+
+---
+
+test> Doc.fromJson.tests.imageTest1 = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Image")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            , ("url", Object [("tag", Text "Word"), ("value", Text "url")])
+            , ("caption", Object [("tag", Text "Optional"), ("kind", Text "None")])
+            ])
+        (Image (Word "word") (Word "url") None)
+
+test> Doc.fromJson.tests.imageTest2 = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Image")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            , ("url", Object [("tag", Text "Word"), ("value", Text "url")])
+            , ("caption", Object [("tag", Text "Optional"), ("kind", Text "Some"), ("value", Object [("tag", Text "Word"), ("value", Text "caption")])])
+            ])
+        (Image (Word "word") (Word "url") (Some (Word "caption")))
+
+
+---
+
+test> Doc.fromJson.tests.calloutTest1 = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Callout")
+            , ("icon", Object [("tag", Text "Optional"), ("kind", Text "None")])
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Callout None (Word "word"))
+
+test> Doc.fromJson.tests.calloutTest2 = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Callout")
+            , ("icon", Object [("tag", Text "Optional"), ("kind", Text "Some"), ("value", Object [("tag", Text "Word"), ("value", Text "icon")] )])
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Callout (Some (Word "icon")) (Word "word"))
+
+
+---
+
+test> Doc.fromJson.tests.foldedTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Folded")
+            , ("folded", Json.Boolean true)
+            , ("title", Object [("tag", Text "Word"), ("value", Text "title")])
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Folded true (Word "title") (Word "word"))
+
+---
+
+
+test> Doc.fromJson.tests.tooltipTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Tooltip")
+            , ("hint", Object [("tag", Text "Word"), ("value", Text "hint")])
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Tooltip (Word "word") (Word "hint"))
+
+test> Doc.fromJson.tests.namedLinkTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "NamedLink")
+            , ("url", Object [("tag", Text "Word"), ("value", Text "url")])
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (NamedLink (Word "word") (Word "url"))
+
+---
+
+test> Doc.fromJson.tests.styleTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Style")
+            , ("class", Text "important")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Style "important" (Word "word"))
+
+
+test> Doc.fromJson.tests.anchorTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Anchor")
+            , ("identifier", Text "bergen")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Anchor "bergen" (Word "word"))
+
+
+---
+
+
+test> Doc.fromJson.tests.codeblockTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "CodeBlock")
+            , ("language", Text "unison")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (CodeBlock "unison" (Word "word"))
+
+
+---
+
+test> Doc.fromJson.tests.italicTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Italic")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Italic (Word "word"))
+
+test> Doc.fromJson.tests.strikethroughTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Strikethrough")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Strikethrough (Word "word"))
+
+test> Doc.fromJson.tests.blockquoteTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Blockquote")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Blockquote (Word "word"))
+
+test> Doc.fromJson.tests.asideTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Aside")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Aside (Word "word"))
+
+test> Doc.fromJson.tests.groupTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Group")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Group (Word "word"))
+
+---
+
+test> Doc.fromJson.tests.boldTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Bold")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Bold (Word "word"))
+
+---
+
+test> Doc.fromJson.tests.codeTest = test.verify do
+    fromJsonShouldProduce
+        (Object
+            [ ("tag", Text "Code")
+            , ("value", Object [("tag", Text "Word"), ("value", Text "word")])
+            ])
+        (Code (Word "word"))
+
+---
+
+test> Doc.fromJson.tests.wordTest = test.verify do
+    fromJsonShouldProduce (Object [("tag", Text "Word"), ("value", Text "word")]) (Word "word")
+
+---
+
+test> Doc.fromJson.tests.sectionBreakTest = test.verify do
+    fromJsonShouldProduce (Object [("tag", Text "SectionBreak")]) SectionBreak
+
+---
+
+test> Doc.fromJson.tests.linebreakTest = test.verify do
+    fromJsonShouldProduce (Object [("tag", Text "Linebreak")]) Linebreak
+
+---
+
+test> Doc.fromJson.tests.blanklineTest = test.verify do
+    fromJsonShouldProduce (Object [("tag", Text "Blankline")]) Blankline
+
+
+Doc.fromJson.tests.harness.fromJsonShouldProduce : Json -> Doc ->{Exception} ()
+Doc.fromJson.tests.harness.fromJsonShouldProduce subject expected =
+    actual = Doc.fromJson subject
+
+    ensureEqual actual (Right expected)
+
+---
+
+ifPresent : a -> List (a, b) -> Optional b
+ifPresent target = cases
+    (key, value) +: _ | key === target -> Some value
+    _ +: rest -> ifPresent target rest
+    _ -> None
+
+test> ifPresent.tests.ex1 = test.verify do
+    actual = ifPresent "a" [("a", 0), ("a", 1)] 
+    expected = Some 0
+    ensureEqual actual expected
+
+test> ifPresent.tests.ex2 = test.verify do
+    actual = ifPresent "b" [("a", 0), ("b", 1)] 
+    expected = Some 1
+    ensureEqual actual expected
+
+test> ifPresent.tests.ex3 = test.verify do
+    actual = ifPresent "c" [("a", 0), ("b", 1)] 
+    expected = None
+    ensureEqual actual expected
+
+---
+
+Doc.toJson : Doc -> Json
+Doc.toJson doc =
+    match doc with
+        Blankline ->
+            Object
+                [ ("tag", Text "Blankline")
+                ]
+        Linebreak ->
+            Object
+                [ ("tag", Text "Linebreak")
+                ]
+        SectionBreak ->
+            Object
+                [ ("tag", Text "SectionBreak")
+                ]
+        Code doc ->
+            Object
+                [ ("tag", Text "Code")
+                , ("value", Doc.toJson doc)
+                ]
+        Doc.Bold doc ->
+            Object
+                [ ("tag", Text "Bold")
+                , ("value", Doc.toJson doc)
+                ]
+        Italic doc ->
+            Object
+                [ ("tag", Text "Italic")
+                , ("value", Doc.toJson doc)
+                ]
+        Strikethrough doc ->
+            Object
+                [ ("tag", Text "Strikethrough")
+                , ("value", Doc.toJson doc)
+                ]
+        Blockquote doc ->
+            Object
+                [ ("tag", Text "Blockquote")
+                , ("value", Doc.toJson doc)
+                ]
+        Aside doc ->
+            Object
+                [ ("tag", Text "Aside")
+                , ("value", Doc.toJson doc)
+                ]
+        Doc.Group doc ->
+            Object
+                [ ("tag", Text "Group")
+                , ("value", Doc.toJson doc)
+                ]
+        CodeBlock language doc ->
+            Object
+                [ ("tag", Text "CodeBlock")
+                , ("language", Text language)
+                , ("value", Doc.toJson doc)
+                ]
+        Style class doc ->
+            Object
+                [ ("tag", Text "Style")
+                , ("class", Text class)
+                , ("value", Doc.toJson doc)
+                ]
+        Anchor identifier doc ->
+            Object
+                [ ("tag", Text "Anchor")
+                , ("identifier", Text identifier)
+                , ("value", Doc.toJson doc)
+                ]
+        Tooltip doc hint ->
+            Object
+                [ ("tag", Text "Tooltip")
+                , ("hint", Doc.toJson hint)
+                , ("value", Doc.toJson doc)
+                ]
+        NamedLink doc url ->
+            Object
+                [ ("tag", Text "NamedLink")
+                , ("url", Doc.toJson url)
+                , ("value", Doc.toJson doc)
+                ]
+        Folded folded title doc ->
+            Object
+                [ ("tag", Text "Folded")
+                , ("folded", Json.Boolean folded)
+                , ("title", Doc.toJson title)
+                , ("value", Doc.toJson doc)
+                ]
+        Callout None doc ->
+            Object
+                [ ("tag", Text "Callout")
+                , ("icon", Object [("tag", Text "Optional"), ("kind", Text "None")])
+                , ("value", Doc.toJson doc)
+                ]
+        Callout (Some icon) doc ->
+            Object
+                [ ("tag", Text "Callout")
+                , ("icon", Object [("tag", Text "Optional"), ("kind", Text "Some"), ("value", Doc.toJson icon)])
+                , ("value", Doc.toJson doc)
+                ]
+        Image doc url None ->
+            Object
+                [ ("tag", Text "Image")
+                , ("url", Doc.toJson url)
+                , ("caption", Object [("tag", Text "Optional"), ("kind", Text "None")])
+                , ("value", Doc.toJson doc)
+                ]
+        Image doc url (Some caption) ->
+            Object
+                [ ("tag", Text "Image")
+                , ("url", Doc.toJson url)
+                , ("caption", Object [("tag", Text "Optional"), ("kind", Text "Some"), ("value", Doc.toJson caption)])
+                , ("value", Doc.toJson doc)
+                ]
+        Paragraph paragraphs ->
+            Object
+                [ ("tag", Text "Paragraph")
+                , ("value",
+                    paragraphs
+                        |> List.map Doc.toJson
+                        |> Array)
+                ]
+        BulletedList items ->
+            Object
+                [ ("tag", Text "BulletedList")
+                , ("value",
+                    items
+                        |> List.map Doc.toJson
+                        |> Array)
+                ]
+        Join items ->
+            Object
+                [ ("tag", Text "Join")
+                , ("value",
+                    items
+                        |> List.map Doc.toJson
+                        |> Array)
+                ]
+        UntitledSection items ->
+            Object
+                [ ("tag", Text "UntitledSection")
+                , ("value",
+                    items
+                        |> List.map Doc.toJson
+                        |> Array)
+                ]
+        Column items ->
+            Object
+                [ ("tag", Text "Column")
+                , ("value",
+                    items
+                        |> List.map Doc.toJson
+                        |> Array)
+                ]
+        NumberedList index items ->
+            Object
+                [ ("tag", Text "NumberedList")
+                , ("index", Number (Nat.toText index))
+                , ("value",
+                    items
+                        |> List.map Doc.toJson
+                        |> Array)
+                ]
+        Section title items ->
+            Object
+                [ ("tag", Text "Section")
+                , ("title", Doc.toJson title)
+                , ("value",
+                    items
+                        |> List.map Doc.toJson
+                        |> Array)
+                ]
+        Special _ ->
+            Object
+                [ ("tag", Text "Special")
+                , ("comment", Text "as of yet unsupported")
+                ]
+        Doc.Table items ->
+            Object
+                [ ("tag", Text "Table")
+                , ("value",
+                    items
+                        |> List.map (row -> List.map Doc.toJson row |> Array)
+                        |> Array)
+                ]
+        Word text -> 
+            Object
+                [ ("tag", Text "Word")
+                , ("value", Text text) 
+                ]
+
+
+
+test> Doc.toJson.tableTest = test.verify do
+    toJsonShouldProduce (Table [
+        [Word "header 1", Word "header 2"],
+        [Word "row 1 / value 1", Word "row 1 / value 2"],
+        [Word "row 2 / value 1", Word "row 2 / value 2"]
+    ])
+        """
+            {
+                "tag" : "Table",
+                "value": [
+                    [{"tag": "Word", "value": "header 1"}, {"tag": "Word", "value": "header 2"}],
+                    [{"tag": "Word", "value": "row 1 / value 1"}, {"tag": "Word", "value": "row 1 / value 2"}],
+                    [{"tag": "Word", "value": "row 2 / value 1"}, {"tag": "Word", "value": "row 2 / value 2"}]
+                ]
+            }
+        """
+
+---
+
+> {{
+    ```mermaid
+sequenceDiagram
+  Note left of Booster: Sends Feedback
+  Booster->>Server: Doc
+  Note right of Server: Receives Feedback
+  Server->>Booster: 👍
+    ```
+}}
+
+
+---
+
+test> Doc.toJson.sectionTest = test.verify do
+    toJsonShouldProduce (Section (Word "title") [(Word "head"), (Word "tail")])
+        """
+            {
+                "tag" : "Section",
+                "title": {
+                    "tag": "Word",
+                    "value": "title"
+                },
+                "value": [
+                    {
+                        "tag": "Word",
+                        "value": "head"
+                    },
+                    {
+                        "tag": "Word",
+                        "value": "tail"
+                    },  
+                ]
+            }
+        """
+
+
+---
+
+test> Doc.toJson.numberedListTest = test.verify do
+    toJsonShouldProduce (NumberedList 37 [(Word "head"), (Word "tail")])
+        """
+            {
+                "tag" : "NumberedList",
+                "index": 37,
+                "value": [
+                    {
+                        "tag": "Word",
+                        "value": "head"
+                    },
+                    {
+                        "tag": "Word",
+                        "value": "tail"
+                    },  
+                ]
+            }
+        """
+
+---
+
+README.numberedListExample : Doc
+README.numberedListExample =
+    NumberedList 37 [Word "a", Word "b"]
+
+---
+
+test> Doc.toJson.columnTest = test.verify do
+    toJsonShouldProduce (Column [(Word "top"), (Word "bottom")])
+        """
+            {
+                "tag" : "Column",
+                "value": [
+                    {
+                        "tag": "Word",
+                        "value": "top"
+                    },
+                    {
+                        "tag": "Word",
+                        "value": "bottom"
+                    },  
+                ]
+            }
+        """
+
+test> Doc.toJson.UntitledSectionTest = test.verify do
+    toJsonShouldProduce (UntitledSection [(Word "first"), (Word "second")])
+        """
+            {
+                "tag" : "UntitledSection",
+                "value": [
+                    {
+                        "tag": "Word",
+                        "value": "first"
+                    },
+                    {
+                        "tag": "Word",
+                        "value": "second"
+                    },  
+                ]
+            }
+        """
+
+
+test> Doc.toJson.joinTest = test.verify do
+    toJsonShouldProduce (Join [(Word "first"), (Word "second")])
+        """
+            {
+                "tag" : "Join",
+                "value": [
+                    {
+                        "tag": "Word",
+                        "value": "first"
+                    },
+                    {
+                        "tag": "Word",
+                        "value": "second"
+                    },  
+                ]
+            }
+        """
+
+---
+
+test> Doc.toJson.bulletedListTest = test.verify do
+    toJsonShouldProduce (BulletedList [(Word "milk"), (Word "bread")])
+        """
+            {
+                "tag" : "BulletedList",
+                "value": [
+                    {
+                        "tag": "Word",
+                        "value": "milk"
+                    },
+                    {
+                        "tag": "Word",
+                        "value": "bread"
+                    },  
+                ]
+            }
+        """
+
+---
+
+
+test> Doc.toJson.paragraphTest = test.verify do
+    toJsonShouldProduce (Paragraph [(Word "a"), (Word "word")])
+        """
+            {
+                "tag" : "Paragraph",
+                "value": [
+                    {
+                        "tag": "Word",
+                        "value": "a"
+                    },
+                    {
+                        "tag": "Word",
+                        "value": "word"
+                    },  
+                ]
+            }
+        """
+
+---
+
+test> Doc.toJson.image.ex1 = test.verify do
+    toJsonShouldProduce (Image (Word "alt text") (Word "url") None)
+        """
+            {
+                "tag" : "Image",
+                "url": {
+                    "tag": "Word",
+                    "value": "url"
+                },
+                "caption" : {
+                    "tag": "Optional",
+                    "kind": "None"
+                },
+                "value": {
+                    "tag": "Word",
+                    "value": "alt text"
+                }
+            }
+        """
+
+test> Doc.toJson.image.ex2 = test.verify do
+    toJsonShouldProduce (Image (Word "alt text") (Word "url") (Some (Word "caption")))
+        """
+            {
+                "tag" : "Image",
+                "url": {
+                    "tag": "Word",
+                    "value": "url"
+                },
+                "caption" : {
+                    "tag": "Optional",
+                    "kind": "Some",
+                    "value": {
+                        "tag": "Word",
+                        "value": "caption"
+                    }
+                },
+                "value": {
+                    "tag": "Word",
+                    "value": "alt text"
+                }
+            }
+        """
+
+---
+
+test> Doc.toJson.callout.ex1 = test.verify do
+    toJsonShouldProduce (Callout None (Word "content"))
+        """
+            {
+                "tag" : "Callout",
+                "icon" : {
+                    "tag": "Optional",
+                    "kind": "None"
+                },
+                "value": {
+                    "tag": "Word",
+                    "value": "content"
+                }
+            }
+        """
+
+test> Doc.toJson.callout.ex2 = test.verify do
+    toJsonShouldProduce (Callout (Some (Word "⚠️")) (Word "content"))
+        """
+            {
+                "tag" : "Callout",
+                "icon" : {
+                    "tag": "Optional",
+                    "kind": "Some",
+                    "value": {
+                        "tag": "Word",
+                        "value": "⚠️"
+                    }
+                },
+                "value": {
+                    "tag": "Word",
+                    "value": "content"
+                }
+            }
+        """
+
+---
+
+
+README.calloutExample : Doc
+README.calloutExample =
+    Callout (Some (Word "icon")) (Word "content")
+
+---
+
+> (Json.Boolean true) |> Json.toText
+
+test> Doc.toJson.foldedTest = test.verify do
+    toJsonShouldProduce (Folded true (Word "title") (Word "content"))
+        """
+            {
+                "tag" : "Folded",
+                "folded": true,
+                "title" : {
+                    "tag": "Word",
+                    "value": "title"
+                },
+                "value": {
+                    "tag": "Word",
+                    "value": "content"
+                }
+            }
+        """
+
+---
+
+test> Doc.toJson.namedLinkTest = test.verify do
+    toJsonShouldProduce (NamedLink (Word "content") (Word "/url"))
+        """
+            {
+                "tag" : "NamedLink",
+                "url" : {
+                    "tag": "Word",
+                    "value": "/url"
+                },
+                "value": {
+                    "tag": "Word",
+                    "value": "content"
+                }
+            }
+        """
+---
+
+README.namedLinkExample : Doc
+README.namedLinkExample =
+    NamedLink (Word "content") (Word "/url")
+
+---
+
+test> Doc.toJson.tooltipTest = test.verify do
+    toJsonShouldProduce (Tooltip (Word "content") (Word "hint"))
+        """
+            {
+                "tag" : "Tooltip",
+                "hint" : {
+                    "tag": "Word",
+                    "value": "hint"
+                },
+                "value": {
+                    "tag": "Word",
+                    "value": "content"
+                }
+            }
+        """
+
+---
+
+README.tooltipExample : Doc
+README.tooltipExample =
+    Tooltip (Word "content") (Word "hint")
+
+---
+
+
+test> Doc.toJson.anchorTest = test.verify do
+    toJsonShouldProduce (Anchor "home" (Word "❤️"))
+        """
+            {
+                "tag" : "Anchor",
+                "identifier" : "home",
+                "value": {
+                    "tag": "Word",
+                    "value": "❤️"
+                }
+            }
+        """
+
+
+---
+
+README.anchorExample : Doc
+README.anchorExample =
+    Anchor "identifier" {{ Point in a document  }}
+
+---
+
+test> Doc.toJson.styleTest = test.verify do
+    toJsonShouldProduce (Style "important" (Word "Unison is great!"))
+        """
+            {
+                "tag" : "Style",
+                "class" : "important",
+                "value": {
+                    "tag": "Word",
+                    "value": "Unison is great!"
+                }
+            }
+        """
+
+---
+
+README.styleExample : Doc
+README.styleExample =
+    Style "important" {{ Unison is great }}
+---
+
+test> Doc.toJson.codeBlockTest = test.verify do
+    toJsonShouldProduce (CodeBlock "unison" (Word "Nat.increment 41"))
+        """
+            {
+                "tag" : "CodeBlock",
+                "language" : "unison",
+                "value": {
+                    "tag": "Word",
+                    "value": "Nat.increment 41"
+                }
+            }
+        """
+
+
+---
+
+
+> {{
+    ```plain
+        What structure will this be
+    ```
+}}
+
+---
+
+
+test> Doc.toJson.groupTest = test.verify do
+    toJsonShouldProduce (Group (Word "a grouped document"))
+        """
+            {
+                "tag" : "Group",
+                "value": {
+                    "tag": "Word",
+                    "value": "a grouped document"
+                }
+            }
+        """
+
+
+
+test> Doc.toJson.AsideTest = test.verify do
+    toJsonShouldProduce (Aside (Word "a side note"))
+        """
+            {
+                "tag" : "Aside",
+                "value": {
+                    "tag": "Word",
+                    "value": "a side note"
+                }
+            }
+        """
+
+
+test> Doc.toJson.blockquoteTest = test.verify do
+    toJsonShouldProduce (Blockquote (Word "a quote"))
+        """
+            {
+                "tag" : "Blockquote",
+                "value": {
+                    "tag": "Word",
+                    "value": "a quote"
+                }
+            }
+        """
+
+
+test> Doc.toJson.strikethroughTest = test.verify do
+    toJsonShouldProduce (Strikethrough (Word "strikethrough text"))
+        """
+            {
+                "tag" : "Strikethrough",
+                "value": {
+                    "tag": "Word",
+                    "value": "strikethrough text"
+                }
+            }
+        """
+
+---
+
+test> Doc.toJson.italicTest = test.verify do
+    toJsonShouldProduce (Italic (Word "italic text"))
+        """
+            {
+                "tag" : "Italic",
+                "value": {
+                    "tag": "Word",
+                    "value": "italic text"
+                }
+            }
+        """
+
+---
+
+test> Doc.toJson.boldTest = test.verify do
+    toJsonShouldProduce (Bold (Word "bold text"))
+        """
+            {
+                "tag" : "Bold",
+                "value": {
+                    "tag": "Word",
+                    "value": "bold text"
+                }
+            }
+        """
+
+---
+
+test> Doc.toJson.codeTest = test.verify do
+    toJsonShouldProduce (Code (Word "test code"))
+        """
+            {
+                "tag" : "Code",
+                "value": {
+                    "tag": "Word",
+                    "value": "test code"
+                }
+            }
+        """
+
+
+---
+
+test> Doc.toJson.sectionBreakTest = test.verify do
+    toJsonShouldProduce SectionBreak """{"tag":"SectionBreak"}"""
+
+---
+
+test> Doc.toJson.linebreakTest = test.verify do
+    toJsonShouldProduce Linebreak """{"tag":"Linebreak"}"""
+
+---
+
+test> Doc.toJson.blanklineTest = test.verify do
+    toJsonShouldProduce Blankline """{"tag":"Blankline"}"""
+
+---
+
+test> Doc.toJson.wordTest = test.verify do
+    toJsonShouldProduce (Word "test") """{"tag":"Word","value":"test"}"""
+
+Doc.toJson.tests.harness.toJsonShouldProduce : Doc -> Text ->{Exception} ()
+Doc.toJson.tests.harness.toJsonShouldProduce subject expectedSource =
+    actual = Doc.toJson subject
+    expected = Json.fromText expectedSource
+
+    ensureEqual actual expected
+
