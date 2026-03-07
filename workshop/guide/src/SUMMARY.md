@@ -15,6 +15,7 @@
 * [Unison Codebase Manager](./topic/ucm.md)
 * [Documentation](./topic/doc.md)
 * [Testing](./topic/testing.md)
+* [Abilities](./topic/abilities.md)
 
 # Appendices
 * [Installation](./appendix/installation.md)
