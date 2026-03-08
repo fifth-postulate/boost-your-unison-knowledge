@@ -10,6 +10,7 @@
 
 # Topics
 * [First Glance](./topic/glance.md)
+* [Types](./topic/types.md)
 * [Learning Labs](./topic/labs.md)
 * [Cloud Labs](./topic/cloud-labs.md)
 * [Unison Codebase Manager](./topic/ucm.md)
