@@ -1,5 +1,9 @@
-feedback.README : Doc
-feedback.README =
+
+
+namespace feedback
+
+README : Doc
+README =
   {{
   # Feedback Application
   
@@ -29,7 +33,7 @@ feedback.README =
 
 
 
-
+---
 
 
 
