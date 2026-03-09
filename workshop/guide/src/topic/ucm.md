@@ -45,7 +45,7 @@ suggested we are going to use `project.create` for that. If you don't provide
 a name, the ucm will pick one for you
 
 ```plain
-> procject.create
+> project.create
 ```
 
 ```
@@ -89,11 +89,11 @@ And press the "use project" button. It will teach you how to install the
 library.
 
 ```plain
-> lib.install @dvberkel/booster-2026/main
+> lib.install @dvberkel/booster-2026
 ```
 
 ```
-  I installed @dvberkel/booster-2026/main into lib.dvberkel_booster_2026_main
+  I installed @dvberkel/booster-2026/releases/1.0.0 into lib.dvberkel_booster_2026_1_0_0
 ```
 
 ## List the Terms
