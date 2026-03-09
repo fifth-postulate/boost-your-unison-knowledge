@@ -1,0 +1,129 @@
+
+namespace feedback
+
+
+deploy.tests.integration : '{IO, Exception} [Result]
+deploy.tests.integration = do
+    _ = systemfw_concurrent_9_0_0.Threads.run do
+        client = start Client.Config.default
+        key = epoch
+        getResponse =
+            runPooled client do
+                Http.get integration.url
+        checkGetFeedbackResponse key getResponse
+        deleteResponse = 
+            runPooled client do
+                Http.delete (deleteUrl key)
+        checkDeleteResponse deleteResponse
+    Ok "integration test succesfull"
+        |> List.singleton
+
+deploy.tests.integration.checkDeleteResponse : HttpResponse -> ()
+deploy.tests.integration.checkDeleteResponse response =
+    if HttpResponse.isSuccess response then
+        ()
+    else
+        test.raiseFailure "could not delete feedback" response    
+
+deploy.tests.integration.deleteUrl : Instant -> URI
+deploy.tests.integration.deleteUrl = cases
+    Instant seconds nanos ->        
+        (URI.path integration.url) Path./ (Int.toText seconds) Path./ (Nat.toText nanos) 
+            |> fromPath
+            |> URI.https
+---
+
+deploy.tests.integration.checkGetFeedbackResponse : Instant -> HttpResponse -> ()
+deploy.tests.integration.checkGetFeedbackResponse instant response =
+    if HttpResponse.isSuccess response then
+        json =
+            response
+                |> bodyText
+                |> Json.fromText
+        match parseInstants json with
+            Right instants ->
+                if List.contains instant instants then
+                    ()
+                else
+                    test.raiseFailure "feedback not found" (instant, instants)
+
+            Left failure ->
+                test.raiseFailure "could not parse all instants" failure                    
+    else
+        test.raiseFailure "could not fetch feedback" integration.url
+    
+
+deploy.tests.integration.url : URI
+deploy.tests.integration.url =
+    URI
+        (Scheme "https")
+        (Some (Authority None (HostName "dvberkel.unison-services.cloud") None))
+        (Path ["s", "booster-unison-feedback", "feedback"])
+        (RawQuery "")
+        (Fragment "")
+
+deploy.tests.integration.original : Doc
+deploy.tests.integration.original =
+    {{ 
+       # Test Feedback
+
+        You did awesome! 
+    }}
+
+deploy.tests.integration.payload : Body
+deploy.tests.integration.payload =
+    integration.original
+        |> Doc.toJson
+        |> Json.toText
+        |> Text.toUtf8
+        |> Body
+
+deploy.tests.integration.parseInstants : Json -> Either integration.Failure (List Instant)
+deploy.tests.integration.parseInstants context =
+    match context with
+        Array items ->
+            candidates =
+                items
+                    |> List.map parseInstant
+            if List.all isRight candidates then
+                candidates
+                    |> List.map Either.toBug
+                    |> Right
+            else
+                candidates
+                    |> List.indexed
+                    |> (List.filterMap cases
+                        (Left a, n) -> Some (a, n)
+                        _ -> None)
+                    |> integration.Failure.ListFailure context
+                    |> Left
+        _ ->
+            Left (integration.Failure.NotAn "Array" context)
+
+deploy.tests.integration.parseInstant : Json -> Either integration.Failure Instant
+deploy.tests.integration.parseInstant context =
+    match context with
+        Object keys ->
+            match ifPresent "tag" keys with
+                Some (Json.Text "Instant") ->
+                    match (ifPresent "seconds" keys, ifPresent "nano" keys) with
+                        (Some (Json.Text seconds), Some (Json.Text nanos)) ->
+                            Right (Instant 
+                                (Int.fromText seconds |> Optional.getOrElse +0)
+                                (Nat.fromText nanos |> Optional.getOrElse 0))
+                        _ ->
+                            Left (NotAn "Instant" context)
+
+                Some c ->
+                    Left (integration.Failure.NotAn "Instant" c)
+
+                None ->
+                    Left (integration.Failure.MissingKey "tag" keys)
+
+        _ ->
+            Left (integration.Failure.NotAn "Object" context)
+
+type deploy.tests.integration.Failure
+    = NotAn Text Json 
+    | ListFailure Json [(integration.Failure, Nat)]
+    | MissingKey Text [(Text, Json)]

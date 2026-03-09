@@ -1,0 +1,328 @@
+
+
+
+
+
+namespace abilities
+
+README : Doc
+README = {{
+    # Abilities
+
+        Abilities is Unision's approach to [_Algebraic Effects_](https://en.wikipedia.org/wiki/Effect_system).
+
+        A great source of information about Abilities is Unison's own
+        [documentation](https://www.unison-lang.org/docs/fundamentals/abilities/).
+        It is a great resource to explore.
+
+        We will take a leasurely pace through abilities
+
+        {{ README.howto }}
+
+        {{ README.using }}
+
+        {{ README.creating }}
+
+        {{ README.handling }}
+}}
+
+README.handling : Doc
+README.handling = folded "Creating handlers for abilities" {{
+    Abilities on there own allow you to express things, but that is not enough.
+
+    We would also like to use them. For that we need to write a handler. We 
+    first give an example of the function that we want to use as an entry point.
+
+    ```
+        playPen do
+            perrito = wake "Doggo"
+            pet perrito
+            pet perrito
+            feed perrito
+    ```
+
+    Here is its implementation
+
+    @source{playPen}
+
+    It is a bit dense, but a summary could look like
+
+    1. For each ability constructor we determine what to do.
+    2. There is also the case where no abilities are used any more.
+    3. Eventually we want to return a textual log of what happened
+    4. We are using a `go` helper to keep track of the log and our friends.
+}}
+
+playPen : '{Tamagotchi} a -> List Text
+playPen script =
+    go : List Text -> Map Friend Fuzzy -> Request {Tamagotchi} r -> List Text
+    go acc fuzzies = cases
+        { _ } -> acc
+
+        { wake name -> resume } ->
+            friend = Friend name
+            (message, fuzzies') = 
+                if Map.contains friend fuzzies then
+                    ("awoke " ++ name, fuzzies)
+                else
+                    ( "Willed " ++ name ++ " into existance"
+                    , Map.put friend (Fuzzy name 5 3) fuzzies
+                    )
+            handle resume friend with go (acc :+ message) fuzzies'
+
+        { pet friend -> resume} ->
+            (message, fuzzies') =
+                match Map.get friend fuzzies with
+                    Some (Fuzzy name love hunger) ->
+                        suffix =
+                            if hunger <= 2 then
+                                ", and hungry"
+                            else
+                                "!"
+                        fuzzy' = Fuzzy name (Nat.increment love) (Nat.decrement hunger)
+                        ((Friend.name friend) ++ ": I feel loved" ++ suffix, Map.put friend fuzzy' fuzzies)
+
+                    None ->
+                        ("I don't know your friend " ++ (Friend.name friend), fuzzies)
+                
+            handle resume () with go (acc :+ message) fuzzies'
+
+        { feed friend -> resume } ->
+            (message, fuzzies') =
+                match Map.get friend fuzzies with
+                    Some (Fuzzy name love hunger) ->
+                        fuzzy' = Fuzzy name love (hunger + 5)
+                        ((Friend.name friend) ++ ": Om nom nom", Map.put friend fuzzy' fuzzies)
+
+                    None ->
+                        ("I don't know your friend " ++ (Friend.name friend), fuzzies)
+
+            handle resume () with go (acc :+ message) fuzzies'
+    handle script() with go ["Let's play!"] Map.empty 
+
+Friend.name : Friend -> Text
+Friend.name = cases
+    Friend name -> name
+
+---
+
+
+README.creating : Doc
+README.creating = folded "Creating your own abilities" {{
+    Just like types, Unison allows you to create your own abilities!
+    And just like types, you do that by providing a number of _constructors_.
+
+    Do you known about [tamagothis](https://en.wikipedia.org/wiki/Tamagotchi)?
+    Those are little electronic pets you can take care of. Let's model that
+    with abilities.
+
+    @source{type Tamagotchi}
+
+    Each of these constructors is a function with the {type Tamagotchi} ability
+    in its signature.
+
+    This allows you to {wake} a {type Friend}, {pet} and {feed} it.
+
+    ```
+        do
+            perrito = wake "Doggo"
+            pet perrito
+            pet perrito
+            feed perrito
+    ```
+
+    
+}}
+
+> do
+    perrito = wake "Doggo"
+    pet perrito
+    pet perrito
+    feed perrito
+
+ability Tamagotchi where
+    wake : Text ->{Tamagotchi} Friend
+    pet : Friend ->{Tamagotchi} ()
+    feed : Friend ->{Tamagotchi} ()
+
+{{ A handle into a {type Fuzzy }}}
+type Friend =
+    Friend Text
+
+
+{{
+    A simple kind of Tamagotchi.
+
+    It has a _name_, experiences an amount of _love_ and feels _hunger_
+}}
+type Fuzzy =
+    Fuzzy Text Nat Nat
+
+---
+
+folded : Text -> Doc -> Doc
+folded title doc =
+    Folded true (Bold (Word title)) doc
+
+README.using : Doc
+README.using = folded "Using abilities" {{
+    We will take some time to explore various interesting abilities from the
+    [base library](https://share.unison-lang.org/@unison/base).
+
+    ## {type Ask}
+
+        The {type Ask} abilities allows your program the _ask_ for a certain
+        value.
+
+        @source{using.example.configuration}
+
+        Here we are asking a {type using.Config} to check if a user would know
+        certain secrets.
+
+        Instead of passing along the {type using.Config} through the entire
+        call stack, we can ask it where we need it.
+
+    ### Handling {type Ask}
+
+        As can be read from the documentation for {type Ask}, one can {provide}
+        a particular term and it will handle the ability.
+
+    ## {Type Store}
+
+        {type Store} is like {type Ask}, but with the opportunity to have what
+        you "ask" for under your control.
+
+        The documentation of {type Store} has a worthwhile implementation of
+        a stack.
+
+    ## {type Each}
+
+        The first time I saw {type Each}, my mind was blown 🤯. It also helped
+        me understand abilities better.
+
+        ```
+            Each.toList do
+                x = each [1, 2, 3]
+                y = each ["a", "b"]
+                (x,y)
+        ```
+
+        The {type Each} ability allows you to describe
+
+        1. For _each_ of these things.
+        2. Do something with that thing.
+        3. And collect all the results.
+
+        Here we took each number and each letter, combined them in a
+        {type Tuple} and collected them in a {type List}.
+
+        Furthermore, you can also {guard} the results
+
+        ```   
+            Each.toList do
+                n = 37
+                x = each (range 1 n)
+                y = each (range 1 n)
+                guard (x <= y)
+                square_sum = x*x + y*y
+                guard (square_sum == n)
+                (x, y)
+        ```
+
+        A powerful ability indeed.
+}}
+
+> Each.toList do
+    n = 37
+    x = each (range 1 n)
+    y = each (range 1 n)
+    guard (x <= y)
+    square_sum = x*x + y*y
+    guard (square_sum == n)
+    (x, y)
+
+---
+
+type README.using.Config =
+    Config Text Nat
+
+README.using.Config.check : Text -> Nat -> using.Config -> Boolean
+README.using.Config.check phrase secret = cases
+    using.Config.Config targetPhrase targetSecret ->
+        phrase === targetPhrase && secret == targetSecret
+
+README.using.example.configuration : '{Ask using.Config, IO, Exception} Boolean
+README.using.example.configuration = do
+    config = Ask.ask
+    printLine "What is the passphrase?"
+    phrase = readLine()
+    printLine "What is the secret?"
+    secret =
+        readLine()
+            |> Nat.fromText
+            |> Optional.getOrElse 0
+    using.Config.check phrase secret config
+
+---
+
+README.howto : Doc
+README.howto = folded "How to on abilities" {{
+    You might have seen a signature hinted at an ability. For example {print}
+    has the following signature
+
+    @signature{print}
+
+    It takes an argument of type {type Text} and returns void. Between
+    angle brackets ( `{}` ) you find the _abilities_ {type IO} and
+    {type Exception}.
+
+    ## watch expression
+
+        When you try to print in a watch expression:
+
+        ```plain
+        > print "Hello, World!"
+        ```
+
+        you will run into a problem.
+
+        ```plain
+          The expression in red needs the {IO} ability, but this location does not have access to any abilities.
+  
+             37 | > print "Hello, World!"
+        ```
+
+    ## You have to handle an ability
+
+        To start, you could think of an ability as a means of expressing what
+        a program could do besides a pure computation. The {type IO} ability is
+        special in that sense.
+
+        Together with the {type Exception} ability they can be used in
+        _entry points_ to Unison programs.
+
+        @source{howto.main}
+
+        is Unison term with the type @signature{howto.main} that can be _run_
+        with the following command
+
+        ```plain
+        > run howto.main
+        ```
+
+        It {print}s "Hello, Booster!" and returns `42`.
+
+        Here the {type IO} and {type Exception} ability are handled by the
+        [run command](https://www.unison-lang.org/docs/usage-topics/running-programs/).
+
+    ## Handlers
+
+        Not all abilities need a command to be handled. We will looking at a
+        number of abilities from Unisons base library and there handlers in
+        the next section. 
+}}
+
+README.howto.main : '{IO, Exception} Nat
+README.howto.main = do
+    print "Hello, Booster!"
+    42
