@@ -186,11 +186,13 @@
 <p>a friendly programming language from the future:
 statically-typed, functional, and a lot of fun 😄</p>
 </blockquote>
+<p>This guide was introduced in a <a href="https://fifth-postulate.nl/boost-your-unison-knowledge/workshop/presentation/code-in-unison/#1">presentation</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="what-to-expect"><a class="header" href="#what-to-expect">What to expect</a></h1>
 <p>This book is divided into the following parts</p>
 <ul>
 <li>Introduction</li>
 <li>Topics</li>
+<li>Projects</li>
 <li>Appendices</li>
 </ul>
 <h2 id="introduction"><a class="header" href="#introduction">Introduction</a></h2>
@@ -198,6 +200,9 @@ statically-typed, functional, and a lot of fun 😄</p>
 <h2 id="topics"><a class="header" href="#topics">Topics</a></h2>
 <p>There are various topics that give insight into Unison and the inner workings.
 In the <em>topics</em> part you can follow various threads exploring Unison in detail.</p>
+<h2 id="projects"><a class="header" href="#projects">Projects</a></h2>
+<p>These are ideas for projects of various complexity levels to take on and flex
+you newly acquired Unison knowledge.</p>
 <h2 id="appendices"><a class="header" href="#appendices">Appendices</a></h2>
 <p>The appendices are there to provide context that are not naturally placed within
 the guide. They can be used as a resource for future studies and sometimes
@@ -244,12 +249,12 @@ It is my pleasure to be your guide.</p>
 <p>Today you are maybe exploring <a href="https://www.unison-lang.org/">Unison</a> for the first time. If you are
 lucky, you get to do that during a workshop. Getting to ask questions, and
 sharing experiences is a way of making new friends and strengthening existing
-bounds.</p>
+bonds.</p>
 <p>Even when you are working through this material on your own, there is stil a
 place to find friendly people who are willing and able to discuss all things
 Unison.</p>
 <p>You can find that <a href="https://unison-lang.org/discord">community</a> on Discord.</p>
-<p>Don't hesitate to come by and say hi! You can find me there under the my
+<p>Don't hesitate to come by and say hi! You can find me there under the
 handle: <code>@dvberkel</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="challenges"><a class="header" href="#challenges">Challenges</a></h1>
 <p>The workshop is structered as a number of challenges. Some of the challenges
@@ -275,23 +280,135 @@ with <a href="https://www.unison-lang.org/docs/at-a-glance/">unison at a glance<
 <p>You can find a transcript for this first glance in <code>examples/glance.u</code>.
 In order to following along, you should have installed Unison. Take a look at
 the installation appendix to learn how to install it.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="types"><a class="header" href="#types">Types</a></h1>
+<p>Unison is a typed language. The various ways of creating terms and their types
+are explained in the <a href="https://www.unison-lang.org/docs/fundamentals/values-and-functions/terms/#language-fundamentals">language fundamentals</a>.</p>
+<p>We could also give a whirlwind tour of some of the types.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="learning-labs"><a class="header" href="#learning-labs">Learning Labs</a></h1>
 <p>The Unison documentation has a section called
-<a href="https://www.unison-lang.org/docs/#learning-labs"><em>learning labs</em></a>. Here
-that inspired the last section; first glance.</p>
+<a href="https://www.unison-lang.org/docs/#learning-labs"><em>learning labs</em></a>. That lab
+inspired the last section; first glance.</p>
 <p>Furthermore you will find the
 <a href="https://www.unison-lang.org/docs/labs/wordle/docs/intro/">Wordle clone</a>
 challenge.</p>
 <p>It is a great way to take a deep dive into Unison. Even though there are
 various hints, tips and tricks, you still find a transcript in
 <code>examples/wordle.u</code>.</p>
-<p>There are also challenges for Unison Cloud, which deserve their onw section.</p>
+<p>There are also challenges for Unison Cloud, which deserve their own section.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="cloud-labs"><a class="header" href="#cloud-labs">Cloud Labs</a></h1>
 <p><a href="https://www.unison.cloud/">Unison Cloud</a> is Unisons answer to microservices. It has a
 ton of features, and a number of <a href="https://www.unison.cloud/learn/">labs</a> to get to know them.</p>
 <p>Some of the labs are longer projects so might be better suited to take on after
 the workshop.</p>
 <p>We provide a transcript for <code>cloud-hello-world.u</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="unison-codebase-manager"><a class="header" href="#unison-codebase-manager">Unison Codebase Manager</a></h1>
+<p>Unison leverages the <em>Unison Codebase Manager</em> to have great control over your
+project.</p>
+<p>Instead of relying on text-files to store the software models, <em>ucm</em>
+manipulates the definitions in their abstract syntax tree form.</p>
+<p>We already have seen a glimpse of the power of this tool, now we are going to
+it in all its glory.</p>
+<h2 id="starting-ucm"><a class="header" href="#starting-ucm">Starting ucm</a></h2>
+<p>Start the <code>ucm</code> in a directory.</p>
+<pre><code class="language-plain">&gt;&gt; ucm
+</code></pre>
+<p>You will be greated by a banner</p>
+<pre><code class="language-plain">  Now starting the Unison Codebase Manager (UCM)...
+
+
+   _____     _             
+  |  |  |___|_|___ ___ ___ 
+  |  |  |   | |_ -| . |   |
+  |_____|_|_|_|___|___|_|_|
+  
+  👋 Welcome to Unison!
+  
+  You are running version: release/1.1.0
+
+
+  📚 Read the official docs at https://www.unison-lang.org/docs/
+  
+  Hint: Type 'projects' to list all your projects, or 'project.create' to start something new.
+</code></pre>
+<h2 id="create-a-project"><a class="header" href="#create-a-project">Create a Project</a></h2>
+<p>We are going to create a project to explore Unison in this workshop. As
+suggested we are going to use <code>project.create</code> for that. If you don't provide
+a name, the ucm will pick one for you</p>
+<pre><code class="language-plain">&gt; project.create
+</code></pre>
+<pre><code>  🎉 I've created the project with the randomly-chosen name jolly-racoon (use
+  `project.rename &lt;new-name&gt;` to change it).
+
+
+  I'll now fetch the latest version of the base Unison library...
+
+
+  🎨 Type `ui` to explore this project's code in your browser.
+  🔭 Discover libraries at https://share.unison-lang.org
+  📖 Use `help-topic projects` to learn more about projects.
+  
+  Write your first Unison code with UCM:
+  
+    1. Open scratch.u.
+    2. Write some Unison code and save the file.
+    3. In UCM, type `update` to save it to your new project.
+  
+  🎉 🥳 Happy coding!
+</code></pre>
+<p>If you already know a name, you could also provided it when using the
+<code>project.create</code> command</p>
+<pre><code class="language-plain">&gt; project.create awesome-name
+</code></pre>
+<h2 id="unison-share"><a class="header" href="#unison-share">Unison Share</a></h2>
+<p>If we want to use the <code>booster-2026</code> project as a dependency in this workshop.</p>
+<p>For that we are going to rely on <a href="https://share.unison-lang.org/"><em>Unison Share</em></a>. This is the place to
+discover all things awesome the community created.</p>
+<p>Search for <code>booster-2026</code>.</p>
+<p>And press the "use project" button. It will teach you how to install the
+library.</p>
+<pre><code class="language-plain">&gt; lib.install @dvberkel/booster-2026
+</code></pre>
+<pre><code>  I installed @dvberkel/booster-2026/releases/1.0.0 into lib.dvberkel_booster_2026_1_0_0
+</code></pre>
+<h2 id="list-the-terms"><a class="header" href="#list-the-terms">List the Terms</a></h2>
+<p>You can use ucm to explore the project.</p>
+<pre><code class="language-plain">&gt; ls
+</code></pre>
+<p>And drill deeper in the dependencies</p>
+<pre><code class="language-plain">&gt; ls lib
+</code></pre>
+<p>and deeper</p>
+<pre><code class="language-plain">&gt; ls lib.dvberkel_booster_2026_main
+</code></pre>
+<h2 id="viewing-a-term"><a class="header" href="#viewing-a-term">Viewing a Term</a></h2>
+<p>Not only can we list the terms in the project. We can <code>view</code> them as well.</p>
+<pre><code class="language-plain">&gt; view lib.dvberkel_booster_2026_main.ucm.README
+</code></pre>
+<p>Notice that it describes more information about the ucm in a <code>Doc</code> format.</p>
+<h2 id="exercise"><a class="header" href="#exercise">Exercise</a></h2>
+<p>Explore the <code>ucm.README</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="documentation"><a class="header" href="#documentation">Documentation</a></h1>
+<p>You learned a bit about the Unison Codebase Manager by looking at a piece
+of documentation.</p>
+<p>In Unison documentation is a first-class citizen; there is a type called
+<code>Doc</code> and syntax for creating terms of that type.</p>
+<p>If you haven't already, create a project and depend on <code>booster-2026</code>. Then
+head over to the <code>doc.README</code> and explore!</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="testing"><a class="header" href="#testing">Testing</a></h1>
+<p>Testing is an important feedback mechanism. As such, Unison provides a wealth
+of various different tools to test your applications.</p>
+<p>The <code>booster-2026</code> has a section that focusses on testing. Head over that
+sections <code>README</code> to learn more.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="abilities"><a class="header" href="#abilities">Abilities</a></h1>
+<p>Abilities are Unison's approach to <a href="https://en.wikipedia.org/wiki/Effect_system"><em>Algebraic Effects</em></a>.</p>
+<p>Algebraic effects is a way to describe what for an "effect", e.g. for example
+side effects, a program can have.</p>
+<p>This novel notion is described in the section <code>abilities</code> of our <code>booster-2026</code>
+library. It is subdived into a number of parts, which build upon each other.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="feedback"><a class="header" href="#feedback">Feedback</a></h1>
+<p>This is a cute little project to send feedback about this workshop about Unison,
+via Unison, to a Unison server.</p>
+<p>Take a look at the <code>feedback</code> section in <code>booster-2026</code> for inspiration.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
 <p>In order to enjoy Unison, you first need to install it.</p>
 <p>A complete <a href="https://www.unison-lang.org/docs/quickstart/#step-1-install-unison">installation guide</a> can be found on the
@@ -304,7 +421,7 @@ ubiquitous in Unison.</p>
 <li><a href="https://www.unison.cloud/">Unison Cloud</a></li>
 </ul>
 <p>Make sure you setup an account for them.</p>
-<h2 id="unison-share"><a class="header" href="#unison-share">Unison Share</a></h2>
+<h2 id="unison-share-1"><a class="header" href="#unison-share-1">Unison Share</a></h2>
 <p>Unison Share allows you to</p>
 <blockquote>
 <p>Explore, Discover, and Share Unison Code Projects, libraries, documention,
