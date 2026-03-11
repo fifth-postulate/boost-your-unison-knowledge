@@ -75,13 +75,13 @@
     one can fetch the with httpclient after installing it
 
     ```
-        > lib.install @unison/httpclient
+        > lib.install @unison/http/releases/15.2.0
     ```
 -}
 
--- helloWorld.call: Text -> Text -> '{IO, Exception} Text
+-- helloWorld.call: Text -> Text -> '{IO, Exception, Threads} Text
 -- helloWorld.call user serviceHash = do
---     use http_2_2_2.HttpResponse isSuccess
+--     use unison_http_15_2_0.HttpResponse isSuccess
 --     uri = parse ("https://" ++ user ++ ".unison-services.cloud/h/" ++ serviceHash ++ "/")
 --     response = Http.run do
 --         Http.get uri
@@ -92,4 +92,5 @@
 
 -- helloWorld.specificCall : '{IO, Exception} Text
 -- helloWorld.specificCall = do
---     !(helloWorld.call "dvberkel" "ey2w6ggm4mvytm2dpx3qfg45dzynopfa6vw7a7n4mstviicn2axq")
+--     Threads.run do
+--         helloWorld.call "dvberkel" "ey2w6ggm4mvytm2dpx3qfg45dzynopfa6vw7a7n4mstviicn2axq" ()
