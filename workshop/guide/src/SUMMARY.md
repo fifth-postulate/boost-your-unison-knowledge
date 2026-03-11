@@ -2,6 +2,7 @@
 
 [Title](./title.md)
 [What to expect](./expectations.md)
+[Preparations](./preparations.md)
 
 # Introduction
 * [Origin](./introduction/origin.md)
